@@ -1,15 +1,17 @@
-package de.rmh78.nostr;
+package de.rmh78.nostr.boundary;
 
 import java.net.URI;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import javax.inject.Inject;
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 
+import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -20,10 +22,13 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 public class NostrRelayTest {
 
+    @Inject
+    Logger logger;
+
     private static final LinkedBlockingDeque<String> MESSAGES = new LinkedBlockingDeque<>();
     
     @TestHTTPResource("/")
-    URI uri;
+    URI uri;  
 
     @Test
     public void testWebsocketChat() throws Exception {
@@ -48,7 +53,7 @@ public class NostrRelayTest {
                 {
                     "id":"0",
                     "pubkey":"abc",
-                    "createdAt":1000,
+                    "created_at":1000,
                     "kind":0,
                     "tags":null,
                     "content":null,

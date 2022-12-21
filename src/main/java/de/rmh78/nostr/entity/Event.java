@@ -1,6 +1,8 @@
-package de.rmh78.nostr;
+package de.rmh78.nostr.entity;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Event {
     public static int KIND_SET_METADATA = 0;
@@ -9,6 +11,7 @@ public class Event {
 
     public String id;
     public String pubkey;
+    @JsonProperty("created_at")
     public long createdAt;
     public int kind;
     public List<Tag> tags;

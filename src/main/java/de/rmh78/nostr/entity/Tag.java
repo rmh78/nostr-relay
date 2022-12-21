@@ -1,4 +1,4 @@
-package de.rmh78.nostr;
+package de.rmh78.nostr.entity;
 
 public class Tag {
     public String event;
