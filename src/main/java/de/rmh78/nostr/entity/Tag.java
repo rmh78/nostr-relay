@@ -6,10 +6,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @Embeddable
-@JsonPropertyOrder(value = {"key", "value", "recommendedRelayUrl"})
+@JsonPropertyOrder(value = {"tagKey", "tagValue", "recommendedRelayUrl"})
 @JsonFormat(shape=JsonFormat.Shape.ARRAY)
 public class Tag {
-    public String key;
-    public String value;
+    public String tagKey;
+    public String tagValue;
     public String recommendedRelayUrl;
 }

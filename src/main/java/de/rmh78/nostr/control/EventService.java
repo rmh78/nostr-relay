@@ -45,7 +45,7 @@ public class EventService {
             .addCriteria("e.kind in :kinds", message.filter.kinds)
             .addCriteria("e.createdAt >= :since", message.filter.since)
             .addCriteria("e.createdAt <= :until", message.filter.until)
-            .addCriteria("t.key || '#' || t.value in :tags", message.filter.getAllTagsWithKey());
+            .addCriteria("t.tagKey || '#' || t.tagValue in :tags", message.filter.getAllTagsWithKey());
 
         List<Event> events;
         if (queryBuilder.getParameters().isEmpty()) {

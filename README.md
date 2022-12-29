@@ -1,52 +1,38 @@
-# nostr-relay Project
+# nostr-relay
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+> **Note:** The project is still in early development and not ready for production usage.
 
-If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
+## (1) Intro
 
-## Running the application in dev mode
+[**nostr**](https://github.com/nostr-protocol/nostr) is a open protocol that is able to create a censorship-resistant global "social" network which consists of **nostr clients** and **nostr relays**.
 
-You can run your application in dev mode that enables live coding using:
-```shell script
-mvn compile quarkus:dev
+This project builds a **nostr relay** using **Java** as programming language and [**Quarkus**](https://quarkus.io) as Microservices framework. With Quarkus and GraalVM native image compiler the Java program can be compiled into a native Linux binary (fast startup and minimal memory consumption).
+
+The following Quarkus extensions are used:
+
+| Extension                           | Documentation                                                                                         |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Quarkus Websockets                  | <https://quarkus.io/guides/websockets>                                                                |
+| Quarkus Resteasy Reactive Jackson   | <https://quarkus.io/guides/rest-json> <br> <https://github.com/FasterXML/jackson>                     |
+| Quarkus Hibernate ORM Panache       | <https://quarkus.io/guides/hibernate-orm-panache> <br> <https://hibernate.org/orm/documentation/5.6/> |
+| Quarkus Smallrye Reactive Messaging | <https://smallrye.io/smallrye-reactive-messaging>                                                     |
+
+## (2) Development
+
+1. Use [SDKMAN](https://sdkman.io) to install needed software:
+
+   - Java 17
+   - Maven 3.8.7
+   - Quarkus CLI 2.15.0
+
+2. Start Quarkus dev server by running the command: `quarkus dev`
+
+## (3) Build and run a Quarkus native image
+
+```sh
+# use the cli to compile native binary and build docker image
+quarkus image build docker --native
+
+# run nostr relay
+docker run -i --rm -p 8080:8080 rmh78/nostr-relay:latest
 ```
-
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at http://localhost:8080/q/dev/.
-
-## Packaging and running the application
-
-The application can be packaged using:
-```shell script
-mvn package
-```
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-```shell script
-mvn package -Dquarkus.package.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using: 
-```shell script
-mvn package -Pnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using: 
-```shell script
-mvn package -Pnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/nostr-relay-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult https://quarkus.io/guides/maven-tooling.
-
-## Related Guides
-
-- WebSockets ([guide](https://quarkus.io/guides/websockets)): WebSocket communication channel support
