@@ -19,13 +19,13 @@ public class Filter {
     public List<String> pTags;
 
     // a timestamp, events must be newer than this to pass
-    public long since;
+    public Long since;
 
     // a timestamp, events must be older than this to pass
-    public long until;
+    public Long until;
 
     // maximum number of events to be returned in the initial query
-    public int limit;
+    public Integer limit;
 
     @Override
     public String toString() {

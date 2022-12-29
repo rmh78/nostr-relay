@@ -7,25 +7,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonPropertyOrder(value = {"type", "subscriptionId"})
 @JsonFormat(shape=JsonFormat.Shape.ARRAY)
-public class MessageClose {
+public class CloseSubscriptionIn {
     
     private static ObjectMapper mapper = new ObjectMapper();
     
     public String type;
     public String subscriptionId;
 
-    public MessageClose() {}
-    public MessageClose(String type, String subscriptionId) {
+    public CloseSubscriptionIn() {}
+    public CloseSubscriptionIn(String type, String subscriptionId) {
         this.type = type;
         this.subscriptionId = subscriptionId;
     }
 
-    public static MessageClose fromJson(String json) throws JsonProcessingException  {
-        return mapper.readValue(json, MessageClose.class);
+    public static CloseSubscriptionIn fromJson(String json) throws JsonProcessingException  {
+        return mapper.readValue(json, CloseSubscriptionIn.class);
     }
 
     @Override
     public String toString() {
-        return "MessageClose [type=" + type + ", subscriptionId=" + subscriptionId + "]";
+        return "CloseSubscriptionIn [type=" + type + ", subscriptionId=" + subscriptionId + "]";
     }
 }

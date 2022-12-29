@@ -14,7 +14,7 @@
 ]
 ```
 
-## Server respond
+## Server response
 
 ```json
 [

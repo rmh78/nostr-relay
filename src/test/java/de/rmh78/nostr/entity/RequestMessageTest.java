@@ -27,7 +27,7 @@ public class RequestMessageTest {
             ]
             """;
 
-        var message = MessageRequest.fromJson(json);
+        var message = RequestEventsIn.fromJson(json);
         Assertions.assertEquals("REQ", message.type);
         Assertions.assertEquals("1234567890", message.subscriptionId);
         Assertions.assertNotNull(message.filter);

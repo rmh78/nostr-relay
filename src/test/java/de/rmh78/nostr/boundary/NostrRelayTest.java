@@ -36,8 +36,20 @@ public class NostrRelayTest {
         try (Session session = ContainerProvider.getWebSocketContainer().connectToServer(Client.class, uri)) {
             Assertions.assertEquals("CONNECT", MESSAGES.poll(10, TimeUnit.SECONDS));
 
-            // send first request
-            var request = """
+            var request1 = """
+                [
+                    "EVENT", 
+                    {
+                        "id":"ad328ed1-7f1b-42d0-94f6-625cc809a5d7",
+                        "created_at":1671348685,
+                        "kind":0,
+                        "content":"hallo echo"
+                    }
+                ]
+                """;
+            session.getAsyncRemote().sendText(request1);
+
+            var request2 = """
                 [
                     "REQ", 
                     "1234567890", 
@@ -48,17 +60,20 @@ public class NostrRelayTest {
                     }
                 ]
                 """;
-            session.getAsyncRemote().sendText(request);
+            session.getAsyncRemote().sendText(request2);
             var response = """
-                {
-                    "id":"0",
-                    "pubkey":"abc",
-                    "created_at":1000,
-                    "kind":0,
-                    "tags":null,
-                    "content":null,
-                    "sig":null
-                }
+                [
+                    "EVENT",
+                    "1234567890",
+                    {
+                        "id":"ad328ed1-7f1b-42d0-94f6-625cc809a5d7",
+                        "pubkey":null,
+                        "created_at":1671348685,
+                        "kind":0,
+                        "content":"hallo echo",
+                        "sig":null
+                    }
+                ]
                 """;
             JSONAssert.assertEquals(response, MESSAGES.poll(10, TimeUnit.SECONDS), true);
             

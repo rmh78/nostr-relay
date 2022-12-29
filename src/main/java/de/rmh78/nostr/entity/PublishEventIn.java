@@ -7,25 +7,25 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonPropertyOrder(value = {"type", "event"})
 @JsonFormat(shape=JsonFormat.Shape.ARRAY)
-public class MessageEvent {
+public class PublishEventIn {
 
     private static ObjectMapper mapper = new ObjectMapper();
     
     public String type;
     public Event event;
 
-    public MessageEvent() {}
-    public MessageEvent(String type, Event event) {
+    public PublishEventIn() {}
+    public PublishEventIn(String type, Event event) {
         this.type = type;
         this.event = event;
     }
 
-    public static MessageEvent fromJson(String json) throws JsonProcessingException  {
-        return mapper.readValue(json, MessageEvent.class);
+    public static PublishEventIn fromJson(String json) throws JsonProcessingException  {
+        return mapper.readValue(json, PublishEventIn.class);
     }
 
     @Override
     public String toString() {
-        return "MessageEvent [type=" + type + ", event=" + event + "]";
+        return "PublishEventIn [type=" + type + ", event=" + event + "]";
     }
 }

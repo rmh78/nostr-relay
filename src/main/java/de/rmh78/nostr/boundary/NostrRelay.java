@@ -1,10 +1,11 @@
 package de.rmh78.nostr.boundary;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.websocket.OnClose;
@@ -14,6 +15,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,10 +24,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.rmh78.nostr.entity.Event;
-import de.rmh78.nostr.entity.Filter;
-import de.rmh78.nostr.entity.MessageClose;
-import de.rmh78.nostr.entity.MessageEvent;
-import de.rmh78.nostr.entity.MessageRequest;
+import de.rmh78.nostr.entity.CloseSubscriptionIn;
+import de.rmh78.nostr.entity.PublishEventIn;
+import de.rmh78.nostr.entity.RequestEventsIn;
+import de.rmh78.nostr.entity.RequestEventsOut;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.subscription.Cancellable;
 
 @ServerEndpoint("/")         
 @ApplicationScoped
@@ -36,13 +41,24 @@ public class NostrRelay {
     @Inject
     ObjectMapper mapper;
 
-    // TODO: create class
-    Map<Session, ConcurrentMap<String, Filter>> subscribers = new ConcurrentHashMap<>(); 
+    @Inject
+    @Channel("publish-event-in")
+    Emitter<Event> publishEventEmitter;
+
+    @Inject
+    @Channel("request-events-in")
+    Emitter<RequestEventsIn> requestEventsEmitter;
+
+    @Inject
+    @Channel("request-events-out")
+    Multi<List<RequestEventsOut>> requestedEventsStream;
+
+    private Map<Session, List<String>> subscribers = new ConcurrentHashMap<>();
+    private Cancellable cancellable;
 
     @OnOpen
     public void onOpen(Session session) {
-        var subscriptionsWithFilters = new ConcurrentHashMap<String, Filter>();
-        subscribers.put(session, subscriptionsWithFilters);
+        subscribers.put(session, new ArrayList<String>());
     }
 
     @OnClose
@@ -74,9 +90,9 @@ public class NostrRelay {
         String messageType = node.get(0).asText();
         try {
             switch (messageType) {
-                case "EVENT" -> handleEvent(session, MessageEvent.fromJson(node.toString()));
-                case "REQ" -> handleRequest(session, MessageRequest.fromJson(node.toString()));
-                case "CLOSE" -> handleClose(session, MessageClose.fromJson(node.toString()));
+                case "EVENT" -> handleEvent(session, PublishEventIn.fromJson(node.toString()));
+                case "REQ" -> handleRequest(session, RequestEventsIn.fromJson(node.toString()));
+                case "CLOSE" -> handleClose(session, CloseSubscriptionIn.fromJson(node.toString()));
                 default -> handleUnknown(session, node.toString());
             }
         } catch (JsonProcessingException e) {
@@ -84,22 +100,27 @@ public class NostrRelay {
         }
     }
 
-    private void handleEvent(Session session, MessageEvent message) {
+    @PostConstruct
+    public void subscribe() {
+        cancellable = requestedEventsStream.subscribe().with(events -> sendEvents(events));
+    }
+
+    @PreDestroy
+    public void cleanup() {
+        cancellable.cancel();
+    }
+
+    private void handleEvent(Session session, PublishEventIn message) {
         logger.info(message);
+        publishEventEmitter.send(message.event);
     }
 
-    private void handleRequest(Session session, MessageRequest message) throws JsonProcessingException {
-        // store filter for subscription-id
-        subscribers.get(session).put(message.subscriptionId, message.filter);
-
-        // query events by filter
-        var events = queryEvents(message.filter);
-
-        // send events to 
-        sendEvents(session, events);
+    private void handleRequest(Session session, RequestEventsIn message) throws JsonProcessingException {
+        subscribers.get(session).add(message.subscriptionId);
+        requestEventsEmitter.send(message);
     }
 
-    private void handleClose(Session session, MessageClose message) {
+    private void handleClose(Session session, CloseSubscriptionIn message) {
         logger.info(message);
     }
 
@@ -107,19 +128,28 @@ public class NostrRelay {
         logger.error(message);
     }
 
-    private List<Event> queryEvents(Filter filter) {
-        // TODO: query database
-        var event = new Event();
-        return Arrays.asList(event);
-    }
-
-    private void sendEvents(Session session, List<Event> events) {
+    private void sendEvents(List<RequestEventsOut> events) {
         events.stream().forEach(event -> {
+
+            // TODO: cleanup
+            Session mySession = null;
+            for (Session session : subscribers.keySet()) {
+                var subscriptionIds = subscribers.get(session);
+                if (subscriptionIds.contains(event.subscriptionId)) {
+                    mySession = session;
+                    break;
+                }
+            }
+            if (mySession == null) {
+                return;
+            }
+
             try {
                 var jsonOut = mapper.writeValueAsString(event);
-                session.getAsyncRemote().sendText(jsonOut);    
+                logger.info(jsonOut);
+                mySession.getAsyncRemote().sendText(jsonOut);    
             } catch (JsonProcessingException e) {
-                logger.error(e);
+                logger.error("error on serialization of Event", e);
             }
         });
     }
