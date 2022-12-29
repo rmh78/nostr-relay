@@ -23,6 +23,7 @@ public class EventService {
 
     @Transactional
     @Incoming("publish-event-in")
+    //TODO: add outgoing to channel request-events-out (applying filter)
     public void saveEvent(Event event) {
         // TODO: cleanup
         if (event.id == null) {
@@ -36,22 +37,21 @@ public class EventService {
     @Outgoing("request-events-out")
     public List<RequestEventsOut> queryEvents(RequestEventsIn message) {
 
-        // TODO: #e
-        // TODO: #p
         // TODO: handle limit with panache paging?
 
         var queryBuilder = QueryBuilder.create()
-            .addCriteria("id in :ids", message.filter.ids)
-            .addCriteria("pubkey in :authors", message.filter.authors)
-            .addCriteria("kind in :kinds", message.filter.kinds)
-            .addCriteria("createdAt >= :since", message.filter.since)
-            .addCriteria("createdAt <= :until", message.filter.until);
+            .addCriteria("e.id in :ids", message.filter.ids)
+            .addCriteria("e.pubkey in :authors", message.filter.authors)
+            .addCriteria("e.kind in :kinds", message.filter.kinds)
+            .addCriteria("e.createdAt >= :since", message.filter.since)
+            .addCriteria("e.createdAt <= :until", message.filter.until)
+            .addCriteria("t.key || '#' || t.value in :tags", message.filter.getAllTagsWithKey());
 
         List<Event> events;
         if (queryBuilder.getParameters().isEmpty()) {
             events = Event.listAll();
         } else {
-            events =  Event.list(queryBuilder.getQuery(), queryBuilder.getParameters());
+            events =  Event.list("from Event e join e.tags t where " + queryBuilder.getQuery(), queryBuilder.getParameters());
         }
 
         return events.stream()

@@ -43,7 +43,11 @@ public class NostrRelayTest {
                         "id":"ad328ed1-7f1b-42d0-94f6-625cc809a5d7",
                         "created_at":1671348685,
                         "kind":0,
-                        "content":"hallo echo"
+                        "content":"hallo echo",
+                        "tags":[
+                            ["e", "111", ""],
+                            ["p", "333", ""]
+                        ]
                     }
                 ]
                 """;
@@ -55,7 +59,10 @@ public class NostrRelayTest {
                     "1234567890", 
                     {
                         "kinds":[0,1,2,7],
+                        "#e":["111","222"],
+                        "#p":["333","444"],
                         "since":1671348685,
+                        "until":1671348685,
                         "limit":450
                     }
                 ]
@@ -71,7 +78,11 @@ public class NostrRelayTest {
                         "created_at":1671348685,
                         "kind":0,
                         "content":"hallo echo",
-                        "sig":null
+                        "sig":null,
+                        "tags":[
+                            ["e", "111", ""],
+                            ["p", "333", ""]
+                        ]
                     }
                 ]
                 """;
