@@ -30,6 +30,8 @@ public class EventService {
             event.id = UUID.randomUUID().toString();
         }
         event.persist();
+
+        // use same query-builder from before and add the id
     }
 
     @Transactional
