@@ -58,6 +58,30 @@ public class Filter {
         return allTags;
     }
 
+    public Filter copy() {
+        var copy = new Filter();
+        if (this.ids != null) {
+            copy.ids = List.copyOf(this.ids);
+        }
+        if (this.authors != null) {
+            copy.authors = List.copyOf(this.authors);
+        }
+        if (this.kinds != null) {
+            copy.kinds = List.copyOf(this.kinds);
+        }
+        if (this.eTags != null) {
+            copy.eTags = List.copyOf(this.eTags);
+        }
+        if (this.pTags != null) {
+            copy.pTags = List.copyOf(this.pTags);
+        }
+        copy.since = this.since;
+        copy.until = this.until;
+        copy.limit = this.limit;
+
+        return copy;
+    }
+
     @Override
     public String toString() {
         return "Filter [ids=" + ids + ", authors=" + authors + ", kinds=" + kinds + ", eTags=" + eTags + ", pTags="

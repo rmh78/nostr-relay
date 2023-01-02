@@ -25,20 +25,20 @@ public class EventService {
     @Incoming("publish-event-in")
     //TODO: add outgoing to channel request-events-out (applying filter)
     public void saveEvent(Event event) {
+        logger.info("### save event: " + event.id);
+
         // TODO: cleanup
         if (event.id == null) {
             event.id = UUID.randomUUID().toString();
         }
         event.persist();
-
-        // use same query-builder from before and add the id
     }
 
     @Transactional
     @Incoming("request-events-in")
     @Outgoing("request-events-out")
     public List<RequestEventsOut> queryEvents(RequestEventsIn message) {
-
+        logger.info("### query events: " + message.filter);
         // TODO: handle limit with panache paging?
 
         var queryBuilder = QueryBuilder.create()
@@ -53,8 +53,10 @@ public class EventService {
         if (queryBuilder.getParameters().isEmpty()) {
             events = Event.listAll();
         } else {
-            events =  Event.list("from Event e join e.tags t where " + queryBuilder.getQuery(), queryBuilder.getParameters());
+            events =  Event.list("select distinct e from Event e join e.tags t where " + queryBuilder.getQuery(), queryBuilder.getParameters());
         }
+
+        logger.info("### events found: " + events.size());
 
         return events.stream()
             .map(event -> new RequestEventsOut("EVENT", message.subscriptionId, event))

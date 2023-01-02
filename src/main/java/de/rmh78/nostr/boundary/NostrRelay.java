@@ -28,6 +28,7 @@ import de.rmh78.nostr.entity.CloseSubscriptionIn;
 import de.rmh78.nostr.entity.PublishEventIn;
 import de.rmh78.nostr.entity.RequestEventsIn;
 import de.rmh78.nostr.entity.RequestEventsOut;
+import de.rmh78.nostr.entity.Subscription;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.Cancellable;
 
@@ -53,12 +54,12 @@ public class NostrRelay {
     @Channel("request-events-out")
     Multi<List<RequestEventsOut>> requestedEventsStream;
 
-    private Map<Session, List<String>> subscribers = new ConcurrentHashMap<>();
+    private Map<Session, List<Subscription>> subscribers = new ConcurrentHashMap<>();
     private Cancellable cancellable;
 
     @OnOpen
     public void onOpen(Session session) {
-        subscribers.put(session, new ArrayList<String>());
+        subscribers.put(session, new ArrayList<Subscription>());
     }
 
     @OnClose
@@ -111,12 +112,26 @@ public class NostrRelay {
     }
 
     private void handleEvent(Session session, PublishEventIn message) {
-        logger.info(message);
         publishEventEmitter.send(message.event);
+        sendEventToOthers(message.event.id);
+    }
+
+    private void sendEventToOthers(String eventId) {
+        for (Session session : subscribers.keySet()) {
+            var subscriptions = subscribers.get(session);
+
+            for (Subscription subscription : subscriptions) {
+                var filterCopy = subscription.filter.copy();
+                filterCopy.ids = List.of(eventId);
+                RequestEventsIn message = new RequestEventsIn("REQ", subscription.id, filterCopy);
+                requestEventsEmitter.send(message);
+            }
+        }
     }
 
     private void handleRequest(Session session, RequestEventsIn message) throws JsonProcessingException {
-        subscribers.get(session).add(message.subscriptionId);
+        logger.info(message);
+        subscribers.get(session).add(new Subscription(message.subscriptionId, message.filter));
         requestEventsEmitter.send(message);
     }
 
@@ -131,26 +146,28 @@ public class NostrRelay {
     private void sendEvents(List<RequestEventsOut> events) {
         events.stream().forEach(event -> {
 
-            // TODO: cleanup
-            Session mySession = null;
-            for (Session session : subscribers.keySet()) {
-                var subscriptionIds = subscribers.get(session);
-                if (subscriptionIds.contains(event.subscriptionId)) {
-                    mySession = session;
-                    break;
-                }
-            }
+            Session mySession = getSessionForSubscriptionId(event.subscriptionId);
             if (mySession == null) {
                 return;
             }
 
             try {
                 var jsonOut = mapper.writeValueAsString(event);
-                logger.info(jsonOut);
                 mySession.getAsyncRemote().sendText(jsonOut);    
             } catch (JsonProcessingException e) {
                 logger.error("error on serialization of Event", e);
             }
         });
+    }
+
+    private Session getSessionForSubscriptionId(String subscriptionId) {
+        for (Session session : subscribers.keySet()) {
+            var subscriptions = subscribers.get(session);
+            if (subscriptions.stream().anyMatch(s -> s.id.equals(subscriptionId))) {
+                return session;
+            }
+        }
+
+        return null;
     }
 }
